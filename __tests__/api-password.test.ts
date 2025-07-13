@@ -5,6 +5,7 @@ import { POST } from "@/app/api/password/route";
 import { NextRequest } from "next/server";
 
 describe("POST /api/password", () => {
+  describe("Basic Input Validation", () => {
   it("should return 400 if current password is missing", async () => {
     const request = new NextRequest("http://localhost/api/password", {
       method: "POST",
@@ -177,5 +178,318 @@ describe("POST /api/password", () => {
     expect(response.status).toBe(200);
     expect(data.message).toBe("Password updated successfully!");
     expect(data.success).toBe(true);
+  });
+
+  describe("Edge Case Input Validation", () => {
+    it("should return 400 if both passwords are missing", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({}),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+
+    it("should return 400 if current password is null", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: null, newPassword: "NewPassword123" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+
+    it("should return 400 if new password is null", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: null }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+
+    it("should return 400 if current password is empty string", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "", newPassword: "NewPassword123" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+
+    it("should return 400 if new password is empty string", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+
+    it("should return 400 if current password is only whitespace", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "   ", newPassword: "NewPassword123" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+
+    it("should return 400 if new password is only whitespace", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "   " }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+  });
+
+  describe("Password Complexity Validation", () => {
+    it("should return 400 if new password lacks uppercase letter", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "newpass123" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("New password must contain at least one uppercase letter, one lowercase letter, and one number.");
+    });
+
+    it("should return 400 if new password lacks lowercase letter", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "NEWPASS123" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("New password must contain at least one uppercase letter, one lowercase letter, and one number.");
+    });
+
+    it("should return 400 if new password lacks number", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "NewPassword" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("New password must contain at least one uppercase letter, one lowercase letter, and one number.");
+    });
+
+    it("should accept new password with all required characters", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "NewPass123" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(200);
+      expect(data.message).toBe("Password updated successfully!");
+    });
+
+    it("should accept new password with special characters", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "NewP@ss123!" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(200);
+      expect(data.message).toBe("Password updated successfully!");
+    });
+  });
+
+  describe("Boundary Testing", () => {
+    it("should handle minimum valid complexity at 6 characters", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "Aa1bcd" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(200);
+      expect(data.message).toBe("Password updated successfully!");
+    });
+
+    it("should handle passwords at the 128 character boundary", async () => {
+      const maxPassword = "A" + "a".repeat(125) + "12"; // Exactly 128 chars with complexity
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: maxPassword }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(200);
+      expect(data.message).toBe("Password updated successfully!");
+    });
+  });
+
+  describe("Unicode and Special Character Handling", () => {
+    it("should handle passwords with unicode characters", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "Pässwörd1" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(200);
+      expect(data.message).toBe("Password updated successfully!");
+    });
+
+    it("should handle passwords with emoji", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "Pass🔒word1" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(200);
+      expect(data.message).toBe("Password updated successfully!");
+    });
+
+    it("should count unicode characters correctly for length validation", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: "password123", newPassword: "Pä1bc" }), // 5 unicode chars
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("New password must be at least 6 characters.");
+    });
+  });
+
+  describe("Edge Cases and Malformed Requests", () => {
+    it("should handle request with extra fields", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ 
+          currentPassword: "password123", 
+          newPassword: "NewPassword123",
+          extraField: "ignored" 
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(200);
+      expect(data.message).toBe("Password updated successfully!");
+    });
+
+    it("should handle boolean values for password fields", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: true, newPassword: false }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+
+    it("should handle numeric values for password fields", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: 123456, newPassword: 789012 }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+
+    it("should handle array values for password fields", async () => {
+      const request = new NextRequest("http://localhost/api/password", {
+        method: "POST",
+        body: JSON.stringify({ 
+          currentPassword: ["password123"], 
+          newPassword: ["NewPassword123"] 
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.message).toBe("Current password and new password are required.");
+    });
+  });
   });
 });
